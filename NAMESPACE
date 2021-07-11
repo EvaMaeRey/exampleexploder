@@ -2,4 +2,6 @@
 
 export("%>%")
 export(examples_path_write_exploded)
+export(one_plus_one)
+export(two_plus_two)
 importFrom(magrittr,"%>%")
