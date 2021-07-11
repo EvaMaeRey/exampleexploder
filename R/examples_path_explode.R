@@ -3,16 +3,14 @@ write_flipbook_setup <- function(){
 "
 ---
 
-`r flipbookr::chunk_reveal('funct', title = '### funct')`
+`r flipbookr::chunk_reveal('funct_num_example', title = '### funct')`
 
-```{r funct, include = F}
+```{r funct_num_example, include = F}
 code
 ```
 
 "
 }
-
-
 
 examples_path_flipbooks <- function(package_path = ".",
   functions_path = "./R/", flipbook_setup = write_flipbook_setup()){
@@ -29,12 +27,19 @@ fs::dir_ls(functions_path, pattern = "\\.R") %>%
   dplyr::mutate(example = ifelse(.data$start_example, T, NA)) %>%
   tidyr::fill(.data$example) %>%
   dplyr::filter(.data$example, !.data$start_example) %>%
+  dplyr::mutate(subexample = stringr::str_extract(text, "^#' #.+")) %>%
+  tidyr::fill(.data$subexample) %>%
+  dplyr::group_by(.data$file, .data$funct, .data$subexample) %>%
+  dplyr::mutate(num_example = dplyr::cur_group_id()) %>%
+  dplyr::group_by(.data$file, .data$funct, .data$subexample, .data$num_example) %>%
   dplyr::mutate(text = .data$text %>% stringr::str_remove("^\\#\\' ")) %>%
   dplyr::summarise(text = paste(.data$text, collapse = "\n")) %>%
+  # prepare breaks for each section
   dplyr::mutate(breaks = flipbook_setup) %>%
   dplyr::mutate(breaks = stringr::str_replace_all(.data$breaks, "funct", .data$funct)) %>%
   dplyr::mutate(breaks = stringr::str_replace(.data$breaks, "code", .data$text)) %>%
-  dplyr::pull(breaks)
+  dplyr::mutate(breaks = stringr::str_replace_all(.data$breaks, "num_example", as.character(.data$num_example))) %>%
+  dplyr::pull(.data$breaks)
 
 }
 
@@ -65,6 +70,7 @@ write_setup_code_chunk <- function(package_name){
 paste0(
 '```{r setup, echo = F}
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F, fig.height = 6, comment = "")
+options(knitr.duplicate.label = "allow")
 library(',
 package_name
 ,')
