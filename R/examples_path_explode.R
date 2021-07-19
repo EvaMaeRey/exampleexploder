@@ -92,7 +92,7 @@ package_name
 #' @export
 #'
 #' @examples
-examples_path_write_exploded <- function(package_name,
+package_examples_exploded <- function(package_name,
                                         package_path = ".",
                                          functions_path = "./R/",
                                     flipbook_setup = write_flipbook_setup(),
