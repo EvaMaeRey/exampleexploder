@@ -1,3 +1,5 @@
+#' @importFrom rlang .data
+
 write_flipbook_setup <- function(){
 
 "
@@ -22,6 +24,8 @@ fs::dir_ls(functions_path, pattern = "\\.R") %>%
   dplyr::mutate(text = purrr::map(file, readLines)) %>%
   tidyr::unnest() %>%
   dplyr::filter(.data$text %>% stringr::str_detect("^\\#\\' ")) %>%
+  dplyr::mutate(file = forcats::fct_inorder(.data$file)) %>%
+  dplyr::mutate(funct = forcats::fct_inorder(.data$file)) %>%
   dplyr::group_by(.data$file, .data$funct) %>%
   dplyr::mutate(start_example = .data$text %>% stringr::str_detect("^\\#\\' @examples")) %>%
   dplyr::mutate(example = ifelse(.data$start_example, T, NA)) %>%
@@ -80,13 +84,16 @@ package_name
 
 
 
+#' Returns a flipbook built from package function examples
 #'
-#'
-#' @param path
 #' @param flipbook_setup
 #' @param yaml
 #' @param rmd
 #' @param render
+#' @param package_name
+#' @param package_path
+#' @param functions_path
+#' @param setup_code_chunk
 #'
 #' @return
 #' @export
