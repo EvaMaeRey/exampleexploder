@@ -1,5 +1,3 @@
-#' @importFrom rlang .data
-
 write_flipbook_setup <- function(){
 
 "
@@ -24,18 +22,21 @@ fs::dir_ls(functions_path, pattern = "\\.R") %>%
   dplyr::mutate(text = purrr::map(file, readLines)) %>%
   tidyr::unnest() %>%
   dplyr::filter(.data$text %>% stringr::str_detect("^\\#\\' ")) %>%
-  dplyr::mutate(file = forcats::fct_inorder(.data$file)) %>%
-  dplyr::mutate(funct = forcats::fct_inorder(.data$file)) %>%
-  dplyr::group_by(.data$file, .data$funct) %>%
+  dplyr::mutate(file_id = forcats::fct_inorder(.data$file)) %>%
+  dplyr::mutate(funct_id = forcats::fct_inorder(.data$funct)) %>%
+  dplyr::group_by(.data$file_id, .data$funct_id, .data$file, .data$funct) %>%
   dplyr::mutate(start_example = .data$text %>% stringr::str_detect("^\\#\\' @examples")) %>%
   dplyr::mutate(example = ifelse(.data$start_example, T, NA)) %>%
   tidyr::fill(.data$example) %>%
   dplyr::filter(.data$example, !.data$start_example) %>%
   dplyr::mutate(subexample = stringr::str_extract(text, "^#' #.+")) %>%
   tidyr::fill(.data$subexample) %>%
-  dplyr::group_by(.data$file, .data$funct, .data$subexample) %>%
+  dplyr::mutate(subexample_id = forcats::fct_inorder(.data$subexample)) %>%
+  dplyr::group_by(.data$file_id, .data$funct_id, .data$subexample_id,
+                  .data$file, .data$funct, .data$subexample) %>%
   dplyr::mutate(num_example = dplyr::cur_group_id()) %>%
-  dplyr::group_by(.data$file, .data$funct, .data$subexample, .data$num_example) %>%
+  dplyr::group_by(.data$file_id, .data$funct_id, .data$subexample_id,
+                  .data$file, .data$funct, .data$subexample, .data$num_example) %>%
   dplyr::mutate(text = .data$text %>% stringr::str_remove("^\\#\\' ")) %>%
   dplyr::summarise(text = paste(.data$text, collapse = "\n")) %>%
   # prepare breaks for each section
@@ -84,16 +85,13 @@ package_name
 
 
 
-#' Returns a flipbook built from package function examples
 #'
+#'
+#' @param path
 #' @param flipbook_setup
 #' @param yaml
 #' @param rmd
 #' @param render
-#' @param package_name
-#' @param package_path
-#' @param functions_path
-#' @param setup_code_chunk
 #'
 #' @return
 #' @export
